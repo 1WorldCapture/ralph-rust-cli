@@ -65,7 +65,9 @@ Use bd (beads) for task tracking. Follow these steps:
 4. Implement the task according to the acceptance criteria. You need to read docs under `tasks` for better understanding of whole context.
 5. Run quality gates (bun run build, cargo build if applicable)
 6. Commit your changes with a descriptive message
-7. Run `bd update <id> ...` to add more content for the issue: requirement/root cause/your design solution/etc.
+7. Run `bd update <id> ...` to update beads more info. for future references: 
+  - Run `bd update <id> --design ...`: update brief design solution summary
+  - Run `bd update <id> --notes ...`: update brief summaries of code change or document updates
 8. Run 'bd close <id>' to mark the task as complete
 
 IMPORTANT:
