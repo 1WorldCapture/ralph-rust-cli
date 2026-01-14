@@ -2,7 +2,7 @@ use clap::Parser;
 use std::fs;
 use std::io;
 use std::path::PathBuf;
-use std::process::{Command, ExitCode};
+use std::process::{Command, ExitCode, Stdio};
 
 /// Default system prompt content (equivalent to script's built-in PROMPT)
 const DEFAULT_SYSTEM_PROMPT: &str = r#"Use bd (beads) for task tracking. Follow these steps:
@@ -47,6 +47,16 @@ enum Commands {
         /// Available: droid, codex, claude, gemini
         #[arg(long, default_value = "droid")]
         provider: String,
+    },
+    /// Execute AI provider in a loop until completion or iteration limit (equivalent to ralph-loop.sh)
+    Loop {
+        /// AI provider to use (default: droid)
+        /// Available: droid, codex, claude, gemini
+        #[arg(long, default_value = "droid")]
+        provider: String,
+        /// Maximum number of iterations (default: 10, must be a positive integer)
+        #[arg(long, default_value = "10")]
+        iterations: String,
     },
 }
 
@@ -104,6 +114,15 @@ fn validate_provider(provider: &str) -> Result<(), String> {
     }
 }
 
+/// Validate that iterations is a positive integer (>0).
+fn validate_iterations(iterations: &str) -> Result<u32, String> {
+    match iterations.parse::<u32>() {
+        Ok(n) if n > 0 => Ok(n),
+        Ok(_) => Err("Error: iterations must be a positive integer".to_string()),
+        Err(_) => Err("Error: iterations must be a positive integer".to_string()),
+    }
+}
+
 /// Execute a provider command with the given system prompt.
 /// Returns the exit code from the provider process.
 fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
@@ -136,6 +155,77 @@ fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
 
     Ok(status.code().unwrap_or(1))
 }
+
+/// Execute a provider command with the given system prompt and capture output.
+/// Returns a tuple of (exit_code, output_string).
+/// Used by the loop subcommand to check for COMPLETE marker.
+fn execute_provider_with_output(provider: &str, prompt: &str) -> io::Result<(i32, String)> {
+    use std::io::{BufRead, BufReader};
+
+    let mut child = match provider {
+        "droid" => Command::new("droid")
+            .args(["exec", "--auto", "medium", "--output-format", "stream-json"])
+            .arg(prompt)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()?,
+        "codex" => Command::new("codex")
+            .args(["exec", "--full-auto", "--sandbox", "--json"])
+            .arg(prompt)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()?,
+        "claude" => Command::new("claude")
+            .args(["-p", "--output-format", "stream-json", "--dangerously-skip-permissions"])
+            .arg(prompt)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()?,
+        "gemini" => Command::new("gemini")
+            .args(["-p", "--output-format", "stream-json", "--yolo"])
+            .arg(prompt)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()?,
+        _ => {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("Unknown provider: {}", provider),
+            ))
+        }
+    };
+
+    // Read stdout line by line and print while capturing
+    let stdout = child.stdout.take().expect("Failed to capture stdout");
+    let reader = BufReader::new(stdout);
+    let mut output = String::new();
+
+    for line in reader.lines() {
+        let line = line?;
+        println!("{}", line);
+        output.push_str(&line);
+        output.push('\n');
+    }
+
+    let status = child.wait()?;
+    Ok((status.code().unwrap_or(1), output))
+}
+
+/// Run `bd list --pretty` and print its output.
+fn run_bd_list_pretty() -> io::Result<()> {
+    let status = Command::new("bd")
+        .args(["list", "--pretty"])
+        .status()?;
+
+    if !status.success() {
+        eprintln!("Warning: bd list --pretty exited with code {}", status.code().unwrap_or(1));
+    }
+
+    Ok(())
+}
+
+/// The COMPLETE marker that signals the loop should end early.
+const COMPLETE_MARKER: &str = "<promise>COMPLETE</promise>";
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -174,6 +264,73 @@ fn main() -> ExitCode {
                     ExitCode::from(1)
                 }
             }
+        }
+        Some(Commands::Loop { provider, iterations }) => {
+            // Validate provider
+            if let Err(e) = validate_provider(&provider) {
+                eprintln!("Error: {}", e);
+                return ExitCode::from(1);
+            }
+
+            // Validate iterations
+            let max_iterations = match validate_iterations(&iterations) {
+                Ok(n) => n,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    return ExitCode::from(1);
+                }
+            };
+
+            // Read system prompt
+            let prompt = match read_system_prompt() {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("Error: Failed to read system prompt: {}", e);
+                    return ExitCode::from(1);
+                }
+            };
+
+            eprintln!("Using AI provider: {}", provider);
+            eprintln!("Max iterations: {}", max_iterations);
+            eprintln!();
+
+            let mut completed_early = false;
+            let mut final_iteration = 0;
+
+            for i in 1..=max_iterations {
+                final_iteration = i;
+                eprintln!("==========================================");
+                eprintln!("Iteration {} / {}", i, max_iterations);
+                eprintln!("==========================================");
+
+                match execute_provider_with_output(&provider, &prompt) {
+                    Ok((_, output)) => {
+                        // Check for COMPLETE marker
+                        if output.contains(COMPLETE_MARKER) {
+                            eprintln!();
+                            eprintln!("All tasks complete after {} iterations.", i);
+                            completed_early = true;
+                            break;
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Error: Failed to execute provider '{}': {}", provider, e);
+                        return ExitCode::from(1);
+                    }
+                }
+            }
+
+            if !completed_early {
+                eprintln!();
+                eprintln!("Ralph loop finished after {} iterations", final_iteration);
+            }
+
+            // Run bd list --pretty at the end
+            if let Err(e) = run_bd_list_pretty() {
+                eprintln!("Warning: Failed to run 'bd list --pretty': {}", e);
+            }
+
+            ExitCode::SUCCESS
         }
         None => {
             // No subcommand provided, show help
@@ -249,5 +406,51 @@ mod tests {
         assert!(VALID_PROVIDERS.contains(&"codex"));
         assert!(VALID_PROVIDERS.contains(&"claude"));
         assert!(VALID_PROVIDERS.contains(&"gemini"));
+    }
+
+    #[test]
+    fn test_validate_iterations_valid() {
+        assert_eq!(validate_iterations("1").unwrap(), 1);
+        assert_eq!(validate_iterations("5").unwrap(), 5);
+        assert_eq!(validate_iterations("10").unwrap(), 10);
+        assert_eq!(validate_iterations("100").unwrap(), 100);
+    }
+
+    #[test]
+    fn test_validate_iterations_zero() {
+        let result = validate_iterations("0");
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains("positive integer"));
+    }
+
+    #[test]
+    fn test_validate_iterations_negative() {
+        // "-1" would fail to parse as u32, so should error
+        let result = validate_iterations("-1");
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains("positive integer"));
+    }
+
+    #[test]
+    fn test_validate_iterations_non_numeric() {
+        let result = validate_iterations("abc");
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains("positive integer"));
+
+        let result = validate_iterations("10.5");
+        assert!(result.is_err());
+
+        let result = validate_iterations("");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_complete_marker() {
+        assert_eq!(COMPLETE_MARKER, "<promise>COMPLETE</promise>");
+        assert!("Some output with <promise>COMPLETE</promise> in it".contains(COMPLETE_MARKER));
+        assert!(!"Some output without the marker".contains(COMPLETE_MARKER));
     }
 }
