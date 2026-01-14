@@ -4,6 +4,8 @@ use std::io;
 use std::path::PathBuf;
 use std::process::{Command, ExitCode, Stdio};
 
+mod upgrade;
+
 /// Default system prompt content (equivalent to script's built-in PROMPT)
 const DEFAULT_SYSTEM_PROMPT: &str = r#"Use bd (beads) for task tracking. Follow these steps:
 
@@ -58,12 +60,17 @@ enum Commands {
         #[arg(long, default_value = "10")]
         iterations: String,
     },
+    /// Upgrade ralph to the latest released version
+    Upgrade,
 }
 
 /// Get the Ralph configuration directory path (~/.Ralph/)
 fn get_config_dir() -> io::Result<PathBuf> {
     let home = dirs::home_dir().ok_or_else(|| {
-        io::Error::new(io::ErrorKind::NotFound, "Could not determine home directory")
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            "Could not determine home directory",
+        )
     })?;
     Ok(home.join(".Ralph"))
 }
@@ -130,7 +137,12 @@ fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
 
     let status = match provider {
         "droid" => Command::new("droid")
-            .args(["exec", "--output-format", "stream-json", "--skip-permissions-unsafe"])
+            .args([
+                "exec",
+                "--output-format",
+                "stream-json",
+                "--skip-permissions-unsafe",
+            ])
             .arg(prompt)
             .status()?,
         "codex" => Command::new("codex")
@@ -138,7 +150,12 @@ fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
             .arg(prompt)
             .status()?,
         "claude" => Command::new("claude")
-            .args(["-p", "--output-format", "stream-json", "--dangerously-skip-permissions"])
+            .args([
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--dangerously-skip-permissions",
+            ])
             .arg(prompt)
             .status()?,
         "gemini" => Command::new("gemini")
@@ -149,7 +166,7 @@ fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("Unknown provider: {}", provider),
-            ))
+            ));
         }
     };
 
@@ -176,7 +193,12 @@ fn execute_provider_with_output(provider: &str, prompt: &str) -> io::Result<(i32
             .stderr(Stdio::inherit())
             .spawn()?,
         "claude" => Command::new("claude")
-            .args(["-p", "--output-format", "stream-json", "--dangerously-skip-permissions"])
+            .args([
+                "-p",
+                "--output-format",
+                "stream-json",
+                "--dangerously-skip-permissions",
+            ])
             .arg(prompt)
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -191,7 +213,7 @@ fn execute_provider_with_output(provider: &str, prompt: &str) -> io::Result<(i32
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 format!("Unknown provider: {}", provider),
-            ))
+            ));
         }
     };
 
@@ -213,12 +235,13 @@ fn execute_provider_with_output(provider: &str, prompt: &str) -> io::Result<(i32
 
 /// Run `bd list --pretty` and print its output.
 fn run_bd_list_pretty() -> io::Result<()> {
-    let status = Command::new("bd")
-        .args(["list", "--pretty"])
-        .status()?;
+    let status = Command::new("bd").args(["list", "--pretty"]).status()?;
 
     if !status.success() {
-        eprintln!("Warning: bd list --pretty exited with code {}", status.code().unwrap_or(1));
+        eprintln!(
+            "Warning: bd list --pretty exited with code {}",
+            status.code().unwrap_or(1)
+        );
     }
 
     Ok(())
@@ -265,7 +288,10 @@ fn main() -> ExitCode {
                 }
             }
         }
-        Some(Commands::Loop { provider, iterations }) => {
+        Some(Commands::Loop {
+            provider,
+            iterations,
+        }) => {
             // Validate provider
             if let Err(e) = validate_provider(&provider) {
                 eprintln!("Error: {}", e);
@@ -332,9 +358,30 @@ fn main() -> ExitCode {
 
             ExitCode::SUCCESS
         }
+        Some(Commands::Upgrade) => match upgrade::run_upgrade() {
+            Ok(upgrade::UpgradeOutcome::UpToDate { current }) => {
+                println!("ralph is already up to date (v{current})");
+                ExitCode::SUCCESS
+            }
+            Ok(upgrade::UpgradeOutcome::Upgraded { from, to }) => {
+                println!("Upgraded ralph from v{from} to v{to}");
+                ExitCode::SUCCESS
+            }
+            Err(upgrade::UpgradeError::PermissionDenied { path }) => {
+                eprintln!("{}", upgrade::permission_denied_suggestions(&path));
+                ExitCode::from(1)
+            }
+            Err(e) => {
+                eprintln!("Error: {e}");
+                ExitCode::from(1)
+            }
+        },
         None => {
             // No subcommand provided, show help
-            println!("ralph {} - A dispatcher for AI provider agents", env!("CARGO_PKG_VERSION"));
+            println!(
+                "ralph {} - A dispatcher for AI provider agents",
+                env!("CARGO_PKG_VERSION")
+            );
             println!();
             println!("Use 'ralph --help' for more information.");
             ExitCode::SUCCESS

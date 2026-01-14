@@ -14,3 +14,11 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 dirs = "5"
+flate2 = "1"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+semver = "1"
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+tar = "0.4"
+tempfile = "3"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
