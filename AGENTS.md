@@ -2,6 +2,16 @@
 
 This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
 
+## Project Basics
+
+**What this repo is:** `ralph-cli` — a Rust CLI named `ralph` that replaces the legacy bash entrypoints in `scripts/` and acts as a dispatcher for external AI Provider CLIs.
+
+**Source of truth:** Always read and implement against the PRD at `tasks/prd.md` (especially the user stories US-01..US-05). Every implementation task should reference the PRD; if anything is unclear, create a beads issue for clarification before coding.
+
+**Legacy entrypoints (behavior to match):**
+- `scripts/ralph-once.sh` (single run)
+- `scripts/ralph-loop.sh` (loop run)
+
 ## Quick Reference
 
 ```bash
@@ -37,4 +47,3 @@ bd sync               # Sync with git
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-
