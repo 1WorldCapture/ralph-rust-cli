@@ -1,15 +1,18 @@
 # Ralph CLI
 
-A Rust CLI dispatcher for AI provider agents (droid, codex, claude, gemini) that streamlines task-driven development workflows using `bd` (beads) for issue tracking.
+A Rust CLI dispatcher for AI coding agents that streamlines task-driven development workflows.
 
 ## Overview
 
-Ralph replaces the legacy bash entrypoints (`scripts/ralph-once.sh`, `scripts/ralph-loop.sh`) with a single, distributable Rust binary. It acts as a unified dispatcher that:
+Ralph is a unified command-line tool designed for developers and teams who want to automate coding tasks using AI agents. It provides:
 
-- **Dispatches tasks** to external AI CLI tools (droid, codex, claude, gemini)
-- **Injects system prompts** that guide agents to follow a structured workflow using `bd`
-- **Supports single-run and loop modes** for different automation needs
-- **Self-upgrades** via `ralph upgrade`
+- **Multi-provider support** — Dispatch tasks to your preferred AI CLI (droid, codex, claude, gemini)
+- **Task-driven workflow** — Integrates with `bd` (beads) for structured issue tracking and autonomous task execution
+- **Flexible execution modes** — Single-run for one-off tasks, loop mode for iterative autonomous development
+- **System prompt injection** — Customizable instructions that guide AI agents to follow your team's workflow
+- **Self-upgrade capability** — Keep ralph up-to-date with `ralph upgrade`
+
+**Target audience:** Developers, DevOps engineers, and teams looking to integrate AI coding assistants into their development pipelines with structured, reproducible workflows.
 
 ## Installation
 
@@ -21,6 +24,16 @@ cd ralph-cli
 cargo build --release
 # Binary available at target/release/ralph
 ```
+
+### Install via Cargo
+
+If you have the source code locally, you can install directly to `~/.cargo/bin`:
+
+```bash
+cargo install --path .
+```
+
+This compiles and installs the `ralph` binary in one step. Ensure `~/.cargo/bin` is in your `$PATH`.
 
 ### Manual Installation
 
