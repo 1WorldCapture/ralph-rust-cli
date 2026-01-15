@@ -146,7 +146,7 @@ fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
             .arg(prompt)
             .status()?,
         "codex" => Command::new("codex")
-            .args(["exec", "--full-auto", "--json"])
+            .args(["exec", "--yolo", "--json"])
             .arg(prompt)
             .status()?,
         "claude" => Command::new("claude")

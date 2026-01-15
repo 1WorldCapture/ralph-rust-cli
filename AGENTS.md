@@ -24,9 +24,11 @@ bd sync               # Sync with git
 
 Pls. run `bd --help`/`bd quickstart`/`bd onboard` for further information.
 
-## Landing the Plane (Session Completion)
+## Landing the Plane (Session Completion, Only applicable for tasks picking from beads)
 
-If you pick up a task from bd, pls. follow these instructions for landing. For any other types of user prompt, you just ignore these.
+**Attention**:
+- Not all interactions are mandatory to adopt the Landing Plan.
+- Following the instructions in this section is only mandatory when you have claimed and are executing tasks from this Beads.
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git commit` (no remote) or `git push` (origin exists) succeeds.
 
