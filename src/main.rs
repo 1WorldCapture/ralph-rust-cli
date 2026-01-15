@@ -187,7 +187,7 @@ fn execute_provider_with_output(provider: &str, prompt: &str) -> io::Result<(i32
             .stderr(Stdio::inherit())
             .spawn()?,
         "codex" => Command::new("codex")
-            .args(["exec", "--full-auto", "--sandbox", "--json"])
+            .args(["exec", "--yolo", "--json"])
             .arg(prompt)
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
