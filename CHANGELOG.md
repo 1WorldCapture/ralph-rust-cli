@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-15
+
+### Added
+- `ralph once` command for single AI provider execution
+- `ralph loop` command with iteration control and COMPLETE marker detection
+- `ralph upgrade` command for self-updating via GitHub Releases
+- Multi-provider support: droid, codex, claude, gemini
+- Customizable system prompt at `~/.Ralph/system-prompt.md`
+- GitHub Actions workflow for automated cross-platform releases
+
+### Changed
+- Improved README documentation with clearer overview and installation instructions
+
 ## [0.1.0] - 2026-01-14
 
 ### Added
