@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-01-15
+
+### Fixed
+- Fixed version number not being updated in Cargo.toml for releases
+- Use `codex --yolo` flag for non-interactive mode
+
 ## [0.2.2] - 2026-01-15
 
 ### Fixed
