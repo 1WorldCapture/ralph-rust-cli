@@ -7,8 +7,8 @@ use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const GITHUB_OWNER: &str = "lyonbot";
-const GITHUB_REPO: &str = "ralph-cli";
+const GITHUB_OWNER: &str = "1WorldCapture";
+const GITHUB_REPO: &str = "ralph-rust-cli";
 
 #[derive(Debug)]
 pub enum UpgradeOutcome {
