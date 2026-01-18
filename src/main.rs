@@ -16,8 +16,8 @@ const DEFAULT_SYSTEM_PROMPT: &str = r#"Use bd (beads) for task tracking. Follow 
 5. Run quality gates (bun run build, cargo build if applicable)
 6. Commit your changes with a descriptive message
 7. Run `bd update <id> ...` to update beads more info. for future references: 
-  - Run `bd update <id> --design ...`: update brief design solution summary
-  - Run `bd update <id> --notes ...`: update brief summaries of code change or document updates
+  - Run `bd update <id> --design ...`: update design solution summary in markdown format, around 500 words
+  - Run `bd update <id> --notes ...`: update summaries of code change or document updates in markdown format, around 500 words
 8. Run 'bd close <id>' to mark the task as complete
 
 IMPORTANT:
