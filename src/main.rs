@@ -152,6 +152,7 @@ fn execute_provider(provider: &str, prompt: &str) -> io::Result<i32> {
         "claude" => Command::new("claude")
             .args([
                 "-p",
+                "--verbose",
                 "--output-format",
                 "stream-json",
                 "--dangerously-skip-permissions",
@@ -195,6 +196,7 @@ fn execute_provider_with_output(provider: &str, prompt: &str) -> io::Result<(i32
         "claude" => Command::new("claude")
             .args([
                 "-p",
+                "--verbose",
                 "--output-format",
                 "stream-json",
                 "--dangerously-skip-permissions",

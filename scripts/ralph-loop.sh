@@ -111,7 +111,7 @@ for ((i=1; i<=ITERATIONS; i++)); do
       ;;
     claude)
       # --dangerously-skip-permissions: skip permission prompts
-      result=$(claude -p --output-format stream-json --dangerously-skip-permissions "$PROMPT")
+      result=$(claude -p --verbose --output-format stream-json --dangerously-skip-permissions "$PROMPT")
       ;;
     gemini)
       # --yolo: skip permission prompts (equivalent to --approval-mode auto_edit)

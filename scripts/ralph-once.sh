@@ -88,7 +88,7 @@ case "$PROVIDER" in
     codex exec --full-auto --json "$PROMPT"
     ;;
   claude)
-    claude -p --output-format stream-json --dangerously-skip-permissions "$PROMPT"
+    claude -p --verbose --output-format stream-json --dangerously-skip-permissions "$PROMPT"
     ;;
   gemini)
     gemini -p --output-format stream-json --yolo "$PROMPT"
